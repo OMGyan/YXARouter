@@ -2,6 +2,8 @@ package com.yx.arouter;
 
 import android.app.Application;
 
+import com.yx.arouterx.ARouter;
+
 /**
  * Author by YX, Date on 2019/8/1.
  */

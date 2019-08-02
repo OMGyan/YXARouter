@@ -2,9 +2,12 @@ package com.yx.login;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 
-import com.yx.arouter.ARouter;
+import com.yx.annotations.BindPath;
+import com.yx.arouterx.ARouter;
 
+@BindPath("login/login")
 public class LoginActivity extends AppCompatActivity {
 
     @Override
@@ -13,7 +16,10 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
     }
 
-    public void jumpActivity(){
-        ARouter.getInstance().jumpActivity("personal",null);
+    public void jumpActivity(View view) {
+        Bundle bundle = new Bundle();
+        bundle.putString("name","james");
+        bundle.putString("age","34");
+        ARouter.getInstance().jumpActivity("personal/personal",bundle);
     }
 }

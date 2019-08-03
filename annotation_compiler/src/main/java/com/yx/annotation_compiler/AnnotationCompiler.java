@@ -1,10 +1,16 @@
 package com.yx.annotation_compiler;
 
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
 import com.yx.annotations.BindPath;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -21,6 +27,8 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 
+import static javax.lang.model.element.Modifier.PUBLIC;
+
 /**
  * Author by YX, Date on 2019/8/2.
  * 注解处理器(用来生成能装载activity的类文件)
@@ -30,6 +38,7 @@ public class AnnotationCompiler extends AbstractProcessor{
 
     //生成文件的对象
     Filer filer;
+    private MethodSpec methodSpec;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnvironment) {
@@ -78,7 +87,10 @@ public class AnnotationCompiler extends AbstractProcessor{
         }
         //有了数据就开始写文件
         if(map.size()>0){
-            Writer writer = null;
+           //通过JavaPoet来写文件
+           goWriteByJavaPoet(map);
+           //传统方式
+            /*  Writer writer = null;
             //创建文件类名
             String utilName = "ActivityUtil_"+System.currentTimeMillis();
             //创建文件
@@ -110,9 +122,37 @@ public class AnnotationCompiler extends AbstractProcessor{
                         e.printStackTrace();
                     }
                 }
-            }
+            }*/
         }
-
         return false;
+    }
+    private void goWriteByJavaPoet(Map<String,String> map) {
+        //导包
+        ClassName  ARouterClass = ClassName.bestGuess("com.yx.arouterx.ARouter");
+        ClassName  IRouterInterface = ClassName.bestGuess("com.yx.arouterx.IRouter");
+        //创建方法
+        MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("putActivity")
+                .addAnnotation(Override.class)
+                .addModifiers(PUBLIC)
+                .returns(TypeName.VOID);
+        Iterator<String> iterator = map.keySet().iterator();
+        while (iterator.hasNext()){
+            String key = iterator.next();
+            String value = map.get(key);
+            methodBuilder.addStatement("$T.getInstance().putActivity($S,$N.class)",ARouterClass,key,value);
+        }
+        //创建类
+        String utilName = "ActivityUtil_"+System.currentTimeMillis();
+        TypeSpec typeSpec = TypeSpec.classBuilder(utilName)
+                .addSuperinterface(IRouterInterface)
+                .addModifiers(PUBLIC)
+                .addMethod(methodBuilder.build())
+                .build();
+        //开始写
+        try {
+            JavaFile.builder("com.yx.util",typeSpec).build().writeTo(filer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
